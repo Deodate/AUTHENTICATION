@@ -22,6 +22,7 @@ public class ReqResponse {
     private String fullName;
     private String nationality;
     private String position;
+    private String phone;
     private String email;
     private String password;
     private Userstbl userstbl;
