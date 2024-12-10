@@ -10,4 +10,6 @@ import com.RESTAPISPRINGBOOTREACT.BACKEND.entity.Userstbl;
 public interface UsersRepository extends JpaRepository<Userstbl, UUID> {
 
     Optional<Userstbl> findByEmail(String email);
+
+    Optional<Userstbl> findByPhone(String phone);
 }
