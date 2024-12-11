@@ -25,7 +25,9 @@ public class ReqResponse {
     private String phone;
     private String email;
     private String password;
+     private String expirationTime;
     private Userstbl userstbl;
+    private List<Userstbl> users; 
     private List<Userstbl> userstblList;
 
     

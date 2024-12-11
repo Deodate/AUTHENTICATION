@@ -19,47 +19,51 @@ import lombok.Data;
 @Table(name = "userstbl")
 @Data
 public class Userstbl implements UserDetails {
-    
+
     @SuppressWarnings("deprecation")
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     private UUID id;
+
     private String email;
     private String fullName;
     private String phone;
     private String password;
     private String nationality;
     private String position;
+    
+    // Added a new field to indicate whether the user account is active or not
+    private boolean active = false; // default is false when created by teacher (inactive)
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-       
         return List.of(new SimpleGrantedAuthority(position));
     }
+
     @Override
     public String getUsername() {
-       
         return email;
     }
 
     @Override
-    public boolean isAccountNonExpired(){
-         return true;
-    }
-    
-    @Override
-    public boolean isAccountNonLocked(){
-          return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired(){
-         return true;
-    }
-
-    @Override
-    public boolean isEnabled(){
+    public boolean isAccountNonExpired() {
         return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        // Now it checks if the account is active or not
+        return active; // returns true only if the user is activated by the admin
     }
 }
