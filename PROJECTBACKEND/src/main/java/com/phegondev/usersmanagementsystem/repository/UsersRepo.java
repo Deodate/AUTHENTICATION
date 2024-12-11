@@ -1,12 +1,13 @@
 package com.phegondev.usersmanagementsystem.repository;
 
 
-import com.phegondev.usersmanagementsystem.entity.OurUsers;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.phegondev.usersmanagementsystem.Model.UsersAccounts;
 
 import java.util.Optional;
 
-public interface UsersRepo extends JpaRepository<OurUsers, Integer> {
+public interface UsersRepo extends JpaRepository<UsersAccounts, Integer> {
 
-    Optional<OurUsers> findByEmail(String email);
+    Optional<UsersAccounts> findByEmail(String email);
 }

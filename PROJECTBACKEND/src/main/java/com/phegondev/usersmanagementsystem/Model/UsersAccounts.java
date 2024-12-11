@@ -1,4 +1,4 @@
-package com.phegondev.usersmanagementsystem.entity;
+package com.phegondev.usersmanagementsystem.Model;
 
 
 import jakarta.persistence.*;
@@ -11,17 +11,18 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "ourusers")
+@Table(name = "usersTable")
 @Data
-public class OurUsers implements UserDetails {
+public class UsersAccounts implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String email;
-    private String name;
+    private String fullName;
+    private String phone;
     private String password;
-    private String city;
+    private String nationality;
     private String role;
 
     @Override

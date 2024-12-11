@@ -1,7 +1,7 @@
-package com.phegondev.usersmanagementsystem.controller;
+package com.phegondev.usersmanagementsystem.Controller;
 
-import com.phegondev.usersmanagementsystem.dto.ReqRes;
-import com.phegondev.usersmanagementsystem.entity.OurUsers;
+import com.phegondev.usersmanagementsystem.DTO.ReqRes;
+import com.phegondev.usersmanagementsystem.Model.UsersAccounts;
 import com.phegondev.usersmanagementsystem.service.UsersManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +42,7 @@ public class UserManagementController {
     }
 
     @PutMapping("/admin/update/{userId}")
-    public ResponseEntity<ReqRes> updateUser(@PathVariable Integer userId, @RequestBody OurUsers reqres){
+    public ResponseEntity<ReqRes> updateUser(@PathVariable Integer userId, @RequestBody UsersAccounts reqres){
         return ResponseEntity.ok(usersManagementService.updateUser(userId, reqres));
     }
 
