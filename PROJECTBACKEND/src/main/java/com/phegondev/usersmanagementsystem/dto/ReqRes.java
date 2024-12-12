@@ -19,13 +19,14 @@ public class ReqRes {
     private String token;
     private String refreshToken;
     private String expirationTime;
-    private String fullName;
-    private String phone;
-    private String nationality;
-    private String role;
+
+    private String fullname;      // Updated from "name" to "fullName"
+    private String phone;         // Phone field
+    private String nationality;   // Changed from "city" to "nationality"
+    private String position;      // Changed from "role" to "position"
     private String email;
     private String password;
-    private UsersAccounts ourUsers;
-    private List<UsersAccounts> ourUsersList;
 
+    private UsersAccounts ourUsers;
+     private List<UsersAccounts> ourUsersList;
 }

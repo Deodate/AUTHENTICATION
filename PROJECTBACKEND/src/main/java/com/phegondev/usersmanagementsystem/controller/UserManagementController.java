@@ -15,7 +15,7 @@ public class UserManagementController {
     private UsersManagementService usersManagementService;
 
     @PostMapping("/auth/register")
-    public ResponseEntity<ReqRes> regeister(@RequestBody ReqRes reg){
+    public ResponseEntity<ReqRes> register(@RequestBody ReqRes reg){
         return ResponseEntity.ok(usersManagementService.register(reg));
     }
 
@@ -25,20 +25,18 @@ public class UserManagementController {
     }
 
     @PostMapping("/auth/refresh")
-    public ResponseEntity<ReqRes> refreshToken(@RequestBody ReqRes req){
+    public ResponseEntity<Object> refreshToken(@RequestBody ReqRes req){
         return ResponseEntity.ok(usersManagementService.refreshToken(req));
     }
 
     @GetMapping("/admin/get-all-users")
-    public ResponseEntity<ReqRes> getAllUsers(){
+    public ResponseEntity<Object> getAllUsers(){
         return ResponseEntity.ok(usersManagementService.getAllUsers());
-
     }
 
     @GetMapping("/admin/get-users/{userId}")
-    public ResponseEntity<ReqRes> getUSerByID(@PathVariable Integer userId){
+    public ResponseEntity<Object> getUserById(@PathVariable Integer userId){
         return ResponseEntity.ok(usersManagementService.getUsersById(userId));
-
     }
 
     @PutMapping("/admin/update/{userId}")
@@ -51,13 +49,12 @@ public class UserManagementController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         ReqRes response = usersManagementService.getMyInfo(email);
-        return  ResponseEntity.status(response.getStatusCode()).body(response);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @DeleteMapping("/admin/delete/{userId}")
-    public ResponseEntity<ReqRes> deleteUSer(@PathVariable Integer userId){
+    public ResponseEntity<Object> deleteUser(@PathVariable Integer userId){
         return ResponseEntity.ok(usersManagementService.deleteUser(userId));
     }
-
-
+    
 }

@@ -1,6 +1,5 @@
 package com.phegondev.usersmanagementsystem.Model;
 
-
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,23 +10,37 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "usersTable")
+@Table(name = "signup", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email"),
+        @UniqueConstraint(columnNames = "phone")
+})
 @Data
 public class UsersAccounts implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(unique = true)
     private String email;
-    private String fullName;
+
+    @Column(name = "fullname") 
+    private String fullname;
+
+    @Column(unique = true)
     private String phone;
+
     private String password;
+
+    @Column(name = "nationality") // Corrected column mapping for nationality
     private String nationality;
-    private String role;
+
+    @Column(name = "position") // Corrected column mapping for position
+    private String position;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        return List.of(new SimpleGrantedAuthority(position)); // Use "position" instead of "role"
     }
 
     @Override
