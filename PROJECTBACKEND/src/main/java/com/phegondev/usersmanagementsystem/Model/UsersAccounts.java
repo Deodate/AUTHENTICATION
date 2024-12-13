@@ -38,6 +38,9 @@ public class UsersAccounts implements UserDetails {
     @Column(name = "position") // Corrected column mapping for position
     private String position;
 
+    // @OneToOne(mappedBy = "usersAccounts")
+    // private ForgotPassword forgotPassword;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(position)); // Use "position" instead of "role"

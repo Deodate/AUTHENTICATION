@@ -197,6 +197,7 @@ public class UsersManagementService {
 
         return resp;
     }
+    
 
     public ReqRes deleteUser(Integer userId) {
         ReqRes resp = new ReqRes();

@@ -56,5 +56,4 @@ public class UserManagementController {
     public ResponseEntity<Object> deleteUser(@PathVariable Integer userId){
         return ResponseEntity.ok(usersManagementService.deleteUser(userId));
     }
-    
 }
