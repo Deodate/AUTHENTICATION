@@ -3,6 +3,7 @@ package com.phegondev.usersmanagementsystem.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+// import com.phegondev.usersmanagementsystem.Model.LoginOtp;
 
 import com.phegondev.usersmanagementsystem.Model.UsersAccounts;
 
@@ -22,5 +23,7 @@ public interface UsersRepo extends JpaRepository<UsersAccounts, Integer> {
     @ManyToOne
      @Query("UPDATE UsersAccounts u SET u.password = ?2  WHERE u.email = ?1")
     void updatePassword(String email, String password);
+
+    
 
 }

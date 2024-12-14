@@ -3,11 +3,12 @@ package com.phegondev.usersmanagementsystem.Controller;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,66 +49,85 @@ public class ForgotEmailController {
         this.forgotPasswordRepo = forgotPasswordRepo;
         this.passwordEncoder = passwordEncoder;
     }
-@PostMapping("/verifyMail/{email}")
-public ResponseEntity<String> verifyEmail(@PathVariable String email) {
-    UsersAccounts usersAccounts = usersRepo.findByEmail(email)
-            .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email!"));
 
-    int otp = otpGenerator();
-    MailBody mailBody = MailBody.builder()
-            .to(email)
-            .text("This is the OTP : " + otp)
-            .subject("Miss Denyse / Deodate Project - Forgot Password request")
-            .build();
-
-    LocalDateTime expirationTime = Instant.ofEpochMilli(System.currentTimeMillis() + 70 * 1000)
-            .atOffset(ZoneOffset.UTC)
-            .toLocalDateTime();
-
-    // No need to set createdAt manually
-    ForgotPassword fp = ForgotPassword.builder()
-            .otp(otp)
-            .expirationTimes(expirationTime)
-            .usersAccounts(usersAccounts)
-            .build();
-
-    emailService.sendSimpleMessage(mailBody);
-    forgotPasswordRepo.save(fp);
-    return ResponseEntity.ok("Email sent for verification!");
-}
-
-    @PostMapping("/verifyOtp/{otp}/{email}")
-public ResponseEntity<Map<String, String>> verifyOtp(@PathVariable Integer otp, @PathVariable String email) {
-    try {
+    @PostMapping("/verifyMail/{email}")
+    public ResponseEntity<String> verifyEmail(@PathVariable String email) {
         UsersAccounts usersAccounts = usersRepo.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email!"));
 
-        ForgotPassword fp = forgotPasswordRepo.findByOtpAndUsersAccounts(otp, usersAccounts)
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid OTP for email: " + email));
+        int otp = otpGenerator();
+        MailBody mailBody = MailBody.builder()
+                .to(email)
+                .text("Lycee Project: This is the OTP : " + otp)
+                .subject("Lycee Saint Alexandre Project / Forgot Password request")
+                .build();
 
-        // Compare expirationTimes with the current time using isBefore
-        if (fp.getExpirationTimes().isBefore(LocalDateTime.now())) {
-            forgotPasswordRepo.deleteById(fp.getFpid());
-            
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "OTP has expired!");
-            return new ResponseEntity<>(response, HttpStatus.EXPECTATION_FAILED);
-        }
+        LocalDateTime expirationTime = Instant.ofEpochMilli(System.currentTimeMillis() + 2 * 60 * 1000)
+                .atOffset(ZoneOffset.UTC)
+                .toLocalDateTime();
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "OTP verified!");
-        return ResponseEntity.ok(response);
+        // No need to set createdAt manually
+        ForgotPassword fp = ForgotPassword.builder()
+                .otp(otp)
+                .expirationTimes(expirationTime)
+                .usersAccounts(usersAccounts)
+                .build();
 
-    } catch (UsernameNotFoundException e) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", e.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-    } catch (Exception e) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", "An unexpected error occurred");
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        emailService.sendSimpleMessage(mailBody);
+        forgotPasswordRepo.save(fp);
+        return ResponseEntity.ok("Email sent for verification!");
     }
-}
+
+    @PostMapping("/verifyOtp/{otp}/{email}")
+    public ResponseEntity<Map<String, String>> verifyOtp(@PathVariable Integer otp, @PathVariable String email) {
+        try {
+            // Find the user first
+            UsersAccounts usersAccounts = usersRepo.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email!"));
+
+            // Find ForgotPassword entries by OTP
+            List<ForgotPassword> forgotPasswordEntries = forgotPasswordRepo.findByOtp(otp);
+
+            // Filter entries for the specific user
+            forgotPasswordEntries = forgotPasswordEntries.stream()
+                    .filter(fp -> fp.getUsersAccounts() != null &&
+                            fp.getUsersAccounts().getId().equals(usersAccounts.getId()))
+                    .collect(Collectors.toList());
+
+            // Check if any entries exist
+            if (forgotPasswordEntries.isEmpty()) {
+                Map<String, String> response = new HashMap<>();
+                response.put("message", "Invalid OTP for this email");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            // Take the most recent entry
+            ForgotPassword fp = forgotPasswordEntries.get(0);
+
+            // Compare expirationTimes with the current time using isBefore
+            if (fp.getExpirationTimes().isBefore(LocalDateTime.now())) {
+                 fp.setExpirationTimes(LocalDateTime.now().plusMinutes(2));
+                forgotPasswordRepo.deleteById(fp.getFpid());
+
+                Map<String, String> response = new HashMap<>();
+                response.put("message", "OTP has expired!");
+                return new ResponseEntity<>(response, HttpStatus.EXPECTATION_FAILED);
+            }
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "OTP verified!");
+            return ResponseEntity.ok(response);
+
+        } catch (UsernameNotFoundException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "An unexpected error occurred: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @PostMapping("/changePassword/{email}")
     public ResponseEntity<String> changePasswordHandler(@RequestBody ChangePassword changePassword,

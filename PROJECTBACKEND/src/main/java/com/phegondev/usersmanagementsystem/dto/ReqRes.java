@@ -20,13 +20,25 @@ public class ReqRes {
     private String refreshToken;
     private String expirationTime;
 
-    private String fullname;      // Updated from "name" to "fullName"
-    private String phone;         // Phone field
-    private String nationality;   // Changed from "city" to "nationality"
-    private String position;      // Changed from "role" to "position"
+    private String fullname;      
+    private String phone;         
+    private String nationality;   
+    private String position;      
     private String email;
     private String password;
 
-    private UsersAccounts ourUsers;
-     private List<UsersAccounts> ourUsersList;
+    // Add OTP field
+    private Integer otp;
+
+    private UsersAccounts usersAccounts;
+    private List<UsersAccounts> usersAccountsList;
+
+    // Getter and setter for OTP
+    public Integer getOtp() {
+        return otp;
+    }
+
+    public void setOtp(Integer otp) {
+        this.otp = otp;
+    }
 }
