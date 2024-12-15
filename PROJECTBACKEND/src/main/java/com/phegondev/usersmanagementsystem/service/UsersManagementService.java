@@ -10,9 +10,6 @@ import com.phegondev.usersmanagementsystem.repository.UsersRepo;
 import jakarta.persistence.Column;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -129,34 +126,21 @@ public class UsersManagementService {
 
             if (userOptional.isPresent()) {
                 UsersAccounts existingUser = userOptional.get();
-
-                // Check if the email is being changed and if the new email already exists
-                if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
-                    Optional<UsersAccounts> existingEmailUser = usersRepo.findByEmail(updatedUser.getEmail());
-                    if (existingEmailUser.isPresent()) {
-                        reqRes.setStatusCode(400);
-                        reqRes.setMessage("Email is already in use.");
-                        return reqRes;
-                    }
-                }
-
-                // Update user fields
                 existingUser.setEmail(updatedUser.getEmail());
                 existingUser.setFullname(updatedUser.getFullname()); // Changed from setName()
                 existingUser.setPhone(updatedUser.getPhone());
                 existingUser.setNationality(updatedUser.getNationality()); // Changed from setCity()
                 existingUser.setPosition(updatedUser.getPosition()); // Changed from setRole()
 
-                // Update password if present
+                 // Update password if present
                 if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
                     existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
                 }
 
                 UsersAccounts savedUser = usersRepo.save(existingUser);
-
                 reqRes.setUsersAccounts(savedUser);
                 reqRes.setStatusCode(200);
-                reqRes.setMessage("User updated successfully");
+                reqRes.setMessage("User updated successfull!");
 
             } else {
                 reqRes.setStatusCode(404);
@@ -174,18 +158,26 @@ public class UsersManagementService {
     // Placeholder methods (unchanged)
     public ReqRes getMyInfo(String email) {
         ReqRes resp = new ReqRes();
-        Optional<UsersAccounts> user = usersRepo.findByEmail(email);
 
-        if (user.isPresent()) {
+        try{
+           Optional<UsersAccounts> user = usersRepo.findByEmail(email);
+
+            if (user.isPresent()) {
             resp.setUsersAccounts(user.get());
-            resp.setMessage("User found");
             resp.setStatusCode(200);
+            resp.setMessage("User found Successful");
+            
         } else {
             resp.setMessage("User not found");
             resp.setStatusCode(404);
             resp.setError("No such user exists");
         }
 
+        } catch(Exception e){
+            resp.setStatusCode(500);
+            resp.setMessage("Error Occured while getting user info: " + e.getMessage());
+        }
+      
         return resp;
     }
 
@@ -198,37 +190,47 @@ public class UsersManagementService {
             // Fetch all users from the repository
             List<UsersAccounts> allUsers = usersRepo.findAll();
 
-            if (allUsers.isEmpty()) {
-                resp.setStatusCode(404);
-                resp.setMessage("No users found");
-            } else {
+            if (!allUsers.isEmpty()) {
+                resp.setUsersAccountsList(allUsers);
                 resp.setStatusCode(200);
-                resp.setMessage("Users retrieved successfully");
-                resp.setUsersAccountsList(allUsers); // Assuming you have a setOurUsers method to set the list of users
+                resp.setMessage("Successful!");
+            } else {
+                resp.setStatusCode(404);
+                resp.setMessage("No users found.");
             }
+            return resp;
 
         } catch (Exception e) {
             resp.setStatusCode(500);
             resp.setMessage("Error retrieving users: " + e.getMessage());
+            return resp;
         }
 
-        return resp;
     }
 
-    public ReqRes deleteUser(Integer userId) {
+    public ReqRes deleteUser(Integer userId, String position) {
         ReqRes resp = new ReqRes();
 
         try {
+
+            if(!"ADMIN".equals(position)){
+                resp.setStatusCode(4053);
+                 resp.setMessage("Access Denied. Admin privileges required.");
+                return resp;
+            }
+
             // Check if the user exists
             Optional<UsersAccounts> userOptional = usersRepo.findById(userId);
 
             if (userOptional.isPresent()) {
                 // Delete the user
-                usersRepo.delete(userOptional.get());
-
-                // Set success response
+                usersRepo.deleteById(userId);
                 resp.setStatusCode(200);
-                resp.setMessage("User deleted successfully");
+                resp.setMessage("User Deleted Successfully!");
+                // usersRepo.delete(userOptional.get());
+                // Set success response
+                // resp.setStatusCode(200);
+                // resp.setMessage("User deleted successfully");
             } else {
                 // User not found
                 resp.setStatusCode(404);
@@ -244,72 +246,73 @@ public class UsersManagementService {
         return resp;
     }
 
+    
+
     // Login 2FA
 
     // LoginOtp entity
-@Column(nullable = false)
-private Integer otp;
+    @Column(nullable = false)
+    private Integer otp;
 
+    // Corrected initiateLogin method
+    public ReqRes initiateLogin(ReqRes req) {
+        ReqRes response = new ReqRes();
+        try {
+            // Find the user using the correct repository method
+            Optional<UsersAccounts> userOptional = usersRepo.findByEmail(req.getEmail());
 
-// Corrected initiateLogin method
-public ReqRes initiateLogin(ReqRes req) {
-    ReqRes response = new ReqRes();
-    try {
-        // Find the user using the correct repository method
-        Optional<UsersAccounts> userOptional = usersRepo.findByEmail(req.getEmail());
-        
-        // Check if user exists
-        if (userOptional.isEmpty()) {
-            response.setStatusCode(404);
-            response.setMessage("User not found");
-            return response;
+            // Check if user exists
+            if (userOptional.isEmpty()) {
+                response.setStatusCode(404);
+                response.setMessage("User not found");
+                return response;
+            }
+
+            UsersAccounts user = userOptional.get();
+
+            // Authenticate the user
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            req.getEmail(),
+                            req.getPassword()));
+
+            // Generate OTP
+            int otp = generateOtp();
+
+            // Remove any existing OTPs for this user
+            loginOtpRepository.deleteByUsersAccounts(user);
+
+            // Create new LoginOtp with explicit field setting
+            LoginOtp loginOtp = new LoginOtp();
+            loginOtp.setUsersAccounts(user);
+            loginOtp.setOtp(otp);
+            loginOtp.setCreatedAt(LocalDateTime.now());
+            loginOtp.setExpirationTimes(LocalDateTime.now().plusMinutes(10));
+            loginOtp.setIsVerified(false);
+
+            // Save the LoginOtp
+            LoginOtp savedLoginOtp = loginOtpRepository.save(loginOtp);
+
+            // Send OTP via email
+            MailBody mailBody = MailBody.builder()
+                    .to(user.getEmail())
+                    .subject("Login OTP for Lycee Project")
+                    .text("Your login OTP is: " + otp + ". This OTP will expire in 10 minutes.")
+                    .build();
+            emailService.sendSimpleMessage(mailBody);
+
+            // Prepare response
+            response.setStatusCode(200);
+            response.setMessage("OTP sent to email. Please verify.");
+            response.setEmail(user.getEmail());
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Login initiation failed: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        UsersAccounts user = userOptional.get();
-
-        // Authenticate the user
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                req.getEmail(),
-                req.getPassword()));
-
-        // Generate OTP
-        int otp = generateOtp();
-
-        // Remove any existing OTPs for this user
-        loginOtpRepository.deleteByUsersAccounts(user);
-
-        // Create new LoginOtp with explicit field setting
-        LoginOtp loginOtp = new LoginOtp();
-        loginOtp.setUsersAccounts(user);
-        loginOtp.setOtp(otp);
-        loginOtp.setCreatedAt(LocalDateTime.now());
-        loginOtp.setExpirationTimes(LocalDateTime.now().plusMinutes(10));
-        loginOtp.setIsVerified(false);
-
-        // Save the LoginOtp
-        LoginOtp savedLoginOtp = loginOtpRepository.save(loginOtp);
-
-        // Send OTP via email
-        MailBody mailBody = MailBody.builder()
-            .to(user.getEmail())
-            .subject("Login OTP for Lycee Project")
-            .text("Your login OTP is: " + otp + ". This OTP will expire in 10 minutes.")
-            .build();
-        emailService.sendSimpleMessage(mailBody);
-
-        // Prepare response
-        response.setStatusCode(200);
-        response.setMessage("OTP sent to email. Please verify.");
-        response.setEmail(user.getEmail());
-
-    } catch (Exception e) {
-        response.setStatusCode(500);
-        response.setMessage("Login initiation failed: " + e.getMessage());
-        e.printStackTrace();
+        return response;
     }
-    return response;
-}
 
     // Helper method to generate OTP
     private Integer generateOtp() {

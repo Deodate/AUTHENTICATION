@@ -30,7 +30,7 @@ public class UserManagementController {
     }
 
     @GetMapping("/admin/get-all-users")
-    public ResponseEntity<Object> getAllUsers() {
+    public ResponseEntity<ReqRes> getAllUsers() {
         return ResponseEntity.ok(usersManagementService.getAllUsers());
     }
 
@@ -44,7 +44,7 @@ public class UserManagementController {
         return ResponseEntity.ok(usersManagementService.updateUser(userId, reqres));
     }
 
-    @GetMapping("/adminuser/get-profile")
+    @GetMapping("/headmasterteacher/get-profile")
     public ResponseEntity<ReqRes> getMyProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -52,9 +52,14 @@ public class UserManagementController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @DeleteMapping("/admin/delete/{userId}")
-    public ResponseEntity<Object> deleteUser(@PathVariable Integer userId) {
-        return ResponseEntity.ok(usersManagementService.deleteUser(userId));
+    @DeleteMapping("/header/delete/{userId}")
+    public ResponseEntity<ReqRes> deleteUser(@PathVariable Integer userId) {
+         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String position = authentication.getAuthorities().stream()
+            .map(Object::toString)
+            .findFirst()
+            .orElse("");
+        return ResponseEntity.ok(usersManagementService.deleteUser(userId, position));
     }
 
     @PostMapping("/auth/logins")
